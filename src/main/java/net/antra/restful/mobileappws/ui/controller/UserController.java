@@ -1,8 +1,10 @@
 package net.antra.restful.mobileappws.ui.controller;
 
+import net.antra.restful.mobileappws.exception.UserServiceException;
 import net.antra.restful.mobileappws.service.UserService;
 import net.antra.restful.mobileappws.shared.dto.UserDto;
 import net.antra.restful.mobileappws.ui.model.request.UserDetailsRequestModel;
+import net.antra.restful.mobileappws.ui.model.response.ErrorMessages;
 import net.antra.restful.mobileappws.ui.model.response.UserRest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,14 +31,20 @@ public class UserController {
         return returnValue;
     }
 
+    /*
+     It seems like postman does not take Accept/application json as the Paramaters
+     */
     @PostMapping(
             consumes = { MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE },
             produces = { MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE }
             )
-    public UserRest createUser(@RequestBody UserDetailsRequestModel userDetails) {
+    public UserRest createUser(@RequestBody UserDetailsRequestModel userDetails) throws UserServiceException {
         logger.info("Get inside the post method!");
 
         UserRest returnValue = new UserRest();
+
+        if (userDetails.getFirstName().isEmpty())
+            throw new UserServiceException(ErrorMessages.MISSING_REQUIRED_FIELD.getErrorMessage());
 
         UserDto userDto = new UserDto();
         BeanUtils.copyProperties(userDetails, userDto);
