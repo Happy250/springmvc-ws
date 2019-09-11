@@ -1,9 +1,12 @@
 package net.antra.restful.mobileappws.service;
 
+import net.antra.restful.mobileappws.exception.UserServiceException;
 import net.antra.restful.mobileappws.io.repository.UserRepository;
 import net.antra.restful.mobileappws.io.entity.UserEntity;
 import net.antra.restful.mobileappws.shared.Utils;
 import net.antra.restful.mobileappws.shared.dto.UserDto;
+import net.antra.restful.mobileappws.ui.model.response.ErrorMessage;
+import net.antra.restful.mobileappws.ui.model.response.ErrorMessages;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.User;
@@ -57,10 +60,35 @@ public class UserServiceImpl implements UserService {
         UserDto returnValue = new UserDto();
         UserEntity userEntity = userRepository.findByUserId(id);
 
-        if (userEntity == null) throw new UsernameNotFoundException(id);
+        if (userEntity == null) throw new UsernameNotFoundException("User with ID: " + id + " not found!");
         BeanUtils.copyProperties(userEntity, returnValue);
 
         return returnValue;
+    }
+
+    @Override
+    public UserDto updateUser(String id, UserDto userDto) {
+        UserDto returnValue = new UserDto();
+        UserEntity userEntity = userRepository.findByUserId(id);
+
+        if (userEntity == null)
+            throw new UserServiceException(ErrorMessages.NO_RECORD_FOUND.getErrorMessage());
+
+        userEntity.setFirstName(userDto.getFirstName());
+        userEntity.setLastName(userDto.getLastName());
+
+        UserEntity updatedUserDetails = userRepository.save(userEntity);
+        BeanUtils.copyProperties(updatedUserDetails, returnValue);
+
+        return returnValue;
+    }
+
+    @Override
+    public void deleteUser(String id) {
+        UserEntity userEntity = userRepository.findByUserId(id);
+        if (userEntity == null)
+            throw new UserServiceException(ErrorMessages.NO_RECORD_FOUND.getErrorMessage());
+        userRepository.delete(userEntity);
     }
 
     @Override
