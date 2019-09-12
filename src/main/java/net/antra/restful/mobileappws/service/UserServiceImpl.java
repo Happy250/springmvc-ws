@@ -4,8 +4,10 @@ import net.antra.restful.mobileappws.exception.UserServiceException;
 import net.antra.restful.mobileappws.io.repository.UserRepository;
 import net.antra.restful.mobileappws.io.entity.UserEntity;
 import net.antra.restful.mobileappws.shared.Utils;
+import net.antra.restful.mobileappws.shared.dto.AddressDto;
 import net.antra.restful.mobileappws.shared.dto.UserDto;
 import net.antra.restful.mobileappws.ui.model.response.ErrorMessages;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -16,6 +18,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,9 +38,14 @@ public class UserServiceImpl implements UserService {
     public UserDto createUser(UserDto user) {
         if ( userRepository.findUserByEmail(user.getEmail()) != null)
             throw new RuntimeException("Record has already existed");
-
-        UserEntity userEntity = new UserEntity();
-        BeanUtils.copyProperties(user, userEntity);
+        for (int i = 0; i < user.getAddresses().size(); i++) {
+            AddressDto address = user.getAddresses().get(i);
+            address.setUserDetails(user);
+            address.setAddressId(utils.generateAddressId(30));
+            user.getAddresses().set(i, address);
+        }
+        ModelMapper modelMapper = new ModelMapper();
+        UserEntity userEntity = modelMapper.map(user, UserEntity.class);
 
         String publicUserId = utils.generateUserId(30);
         userEntity.setUserId(publicUserId);
@@ -45,8 +53,8 @@ public class UserServiceImpl implements UserService {
 
         UserEntity storedUserDetails = userRepository.save(userEntity);
 
-        UserDto returnValue = new UserDto();
-        BeanUtils.copyProperties(storedUserDetails, returnValue);
+        UserDto returnValue = modelMapper.map(storedUserDetails, UserDto.class);
+
 
         return returnValue;
     }
